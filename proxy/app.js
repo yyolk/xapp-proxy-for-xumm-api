@@ -21,7 +21,7 @@ const uuidv4 = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{
 
 const corsOptions = {
   origin: ['http://localhost:8080', '*', 'https://xapp.loca.lt', 'http://127.0.0.1:8080'],
-  // methods: 'GET, POST, OPTIONS'
+  methods: 'GET, POST, OPTIONS'
 }
 app.use(cors(corsOptions))
 
@@ -32,22 +32,35 @@ const reqApiKeyMatch = (req, res, next) => {
   const reqApiKey = req.header('x-api-key')
 
   log(` --- reqApiKey: ${reqApiKey}`)
+  // if (typeof reqApiKey === 'string' && uuidv4.test(reqApiKey.trim())) {
+  //   const envKey = 'XAPP_' + reqApiKey.trim().replace(/-/g, '_')
+  //   if (Object.keys(process.env).indexOf(envKey) > -1) {
+  //     // Attach prepared axios headers on this specific req.
+  //     Object.assign(req, {
+  //       xummAuthHeaders: {
+  //         headers: {
+  //           // 'X-API-Key': reqApiKey.trim(),
+  //           // 'X-API-Secret': process.env[envKey]
+  //           'X-API-Key' p
+  //         }
+  //       }
+  //     })
+  //
+  //     return next()
+  //   }
   if (typeof reqApiKey === 'string' && uuidv4.test(reqApiKey.trim())) {
-    const envKey = 'XAPP_' + reqApiKey.trim().replace(/-/g, '_')
-    if (Object.keys(process.env).indexOf(envKey) > -1) {
-      // Attach prepared axios headers on this specific req.
       Object.assign(req, {
-        xummAuthHeaders: {
-          headers: {
-            'X-API-Key': reqApiKey.trim(),
-            'X-API-Secret': process.env[envKey]
+          xummAuthHeaders: {
+              headers: {
+                  'X-API-Key': reqApiKey.trim(),
+                  'X-API-Secret': process.env['XUMM_API_SECRET']
+              }
           }
-        }
       })
-
       return next()
-    }
   }
+
+
 
   log('Invalid or missing req API key header')
   res.status(403).json({
