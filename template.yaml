@@ -29,6 +29,16 @@ Resources:
           - POST
         AllowOrigins:
           - "*"
+        AllowHeaders:
+          - DNT
+          - User-Agent
+          - X-Requested-With
+          - If-Modified-Since
+          - Cache-Control
+          - Content-Type
+          - Range
+          - X-API-Key
+          - Authorization
           # - !Ref WSTokenTrashRecordSetAlias
           # - !Join
           #   - ""
