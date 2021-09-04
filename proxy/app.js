@@ -75,21 +75,30 @@ const authorize = (req, res, next) => {
     const reqApiKey = decodedJwt?.app
 
     if (typeof reqApiKey === 'string' && uuidv4.test(reqApiKey.trim())) {
-      const envKey = 'XAPP_' + reqApiKey.trim().replace(/-/g, '_')
-      if (Object.keys(process.env).indexOf(envKey) > -1) {
-        // Attach prepared axios headers on this specific req.
-        Object.assign(req, {
+      // const envKey = 'XAPP_' + reqApiKey.trim().replace(/-/g, '_')
+      // if (Object.keys(process.env).indexOf(envKey) > -1) {
+      //   // Attach prepared axios headers on this specific req.
+      //   Object.assign(req, {
+      //     xummAuthHeaders: {
+      //       headers: {
+      //         'X-API-Key': reqApiKey.trim(),
+      //         'X-API-Secret': process.env[envKey]
+      //       }
+      //     }
+      //   })
+      //
+      //   // `return` to skip the error response, no code after here
+      //   return next()
+      // }
+      Object.assign(req, {
           xummAuthHeaders: {
-            headers: {
-              'X-API-Key': reqApiKey.trim(),
-              'X-API-Secret': process.env[envKey]
-            }
+              headers: {
+                  'X-API-Key': reqApiKey.trim(),
+                  'X-API-Secret': process.env['XUMM_API_SECRET']
+              }
           }
-        })
-
-        // `return` to skip the error response, no code after here
-        return next()
-      }
+      })
+      return next()
     }
 
     log('Invalid or missing req API key in JWT')
