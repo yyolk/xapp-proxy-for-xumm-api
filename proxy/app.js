@@ -147,7 +147,7 @@ app.get('/xapp/ott/:token', reqApiKeyMatch, async (req, res) => {
   }
   
   try {
-    const response = await axios.get(`/xapp/ott/${token}`, req.xummAuthHeaders)
+    const response = await axios.get(`/xapp/ott/${token}/${process.env['XAPP_HASH']}`, req.xummAuthHeaders)
     const authToken = jwt.sign({
       ott: token,
       app: req.xummAuthHeaders.headers['X-API-Key']
