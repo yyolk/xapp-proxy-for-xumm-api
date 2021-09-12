@@ -19,35 +19,51 @@ app.use(morganDebug('xapp-backend:httplog', 'combined'))
 
 const uuidv4 = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i);
 
-const corsOptions = {
-  origin: ['http://localhost:8080', '*', 'https://xapp.loca.lt', 'http://127.0.0.1:8080'],
-  // methods: 'GET, POST, OPTIONS'
-}
-app.use(cors(corsOptions))
+// const corsOptions = {
+//   // origin: ['http://localhost:8080', '*', 'https://xapp.loca.lt', 'http://127.0.0.1:8080'],
+//   origin: ['*'],
+//   methods: 'GET, POST, OPTIONS'
+// }
+// app.use(cors(corsOptions))
+app.use(cors())
 
 axios.defaults.baseURL = 'https://xumm.app/api/v1/platform'
 axios.defaults.headers.post['Content-Type'] = 'application/json'
 
 const reqApiKeyMatch = (req, res, next) => {
-  const reqApiKey = req.header('x-api-key')
+  // const reqApiKey = req.header('x-api-key')
+  const reqApiKey = process.env['XUMM_API_KEY']
 
   log(` --- reqApiKey: ${reqApiKey}`)
+  // if (typeof reqApiKey === 'string' && uuidv4.test(reqApiKey.trim())) {
+  //   const envKey = 'XAPP_' + reqApiKey.trim().replace(/-/g, '_')
+  //   if (Object.keys(process.env).indexOf(envKey) > -1) {
+  //     // Attach prepared axios headers on this specific req.
+  //     Object.assign(req, {
+  //       xummAuthHeaders: {
+  //         headers: {
+  //           // 'X-API-Key': reqApiKey.trim(),
+  //           // 'X-API-Secret': process.env[envKey]
+  //           'X-API-Key' p
+  //         }
+  //       }
+  //     })
+  //
+  //     return next()
+  //   }
   if (typeof reqApiKey === 'string' && uuidv4.test(reqApiKey.trim())) {
-    const envKey = 'XAPP_' + reqApiKey.trim().replace(/-/g, '_')
-    if (Object.keys(process.env).indexOf(envKey) > -1) {
-      // Attach prepared axios headers on this specific req.
       Object.assign(req, {
-        xummAuthHeaders: {
-          headers: {
-            'X-API-Key': reqApiKey.trim(),
-            'X-API-Secret': process.env[envKey]
+          xummAuthHeaders: {
+              headers: {
+                  'X-API-Key': reqApiKey.trim(),
+                  'X-API-Secret': process.env['XUMM_API_SECRET']
+              }
           }
-        }
       })
-
       return next()
-    }
   }
+
+
 
   log('Invalid or missing req API key header')
   res.status(403).json({
@@ -58,25 +74,36 @@ const reqApiKeyMatch = (req, res, next) => {
 
 const authorize = (req, res, next) => {
   try {
-    const decodedJwt = jwt.verify(req.header('Authorization'), process.env.XAPP_SECRET)
-    const reqApiKey = decodedJwt?.app
+    // const decodedJwt = jwt.verify(req.header('Authorization'), process.env.XAPP_SECRET)
+    // const reqApiKey = decodedJwt?.app
+    const reqApiKey = process.env['XUMM_API_KEY']
 
     if (typeof reqApiKey === 'string' && uuidv4.test(reqApiKey.trim())) {
-      const envKey = 'XAPP_' + reqApiKey.trim().replace(/-/g, '_')
-      if (Object.keys(process.env).indexOf(envKey) > -1) {
-        // Attach prepared axios headers on this specific req.
-        Object.assign(req, {
+      // const envKey = 'XAPP_' + reqApiKey.trim().replace(/-/g, '_')
+      // if (Object.keys(process.env).indexOf(envKey) > -1) {
+      //   // Attach prepared axios headers on this specific req.
+      //   Object.assign(req, {
+      //     xummAuthHeaders: {
+      //       headers: {
+      //         'X-API-Key': reqApiKey.trim(),
+      //         'X-API-Secret': process.env[envKey]
+      //       }
+      //     }
+      //   })
+      //
+      //   // `return` to skip the error response, no code after here
+      //   return next()
+      // }
+      Object.assign(req, {
           xummAuthHeaders: {
-            headers: {
-              'X-API-Key': reqApiKey.trim(),
-              'X-API-Secret': process.env[envKey]
-            }
+              headers: {
+                  // 'X-API-Key': reqApiKey.trim(),
+                  'X-API-Key': process.env['XUMM_API_KEY'],
+                  'X-API-Secret': process.env['XUMM_API_SECRET']
+              }
           }
-        })
-
-        // `return` to skip the error response, no code after here
-        return next()
-      }
+      })
+      return next()
     }
 
     log('Invalid or missing req API key in JWT')
@@ -125,7 +152,7 @@ app.get('/xapp/ott/:token', reqApiKeyMatch, async (req, res) => {
   }
   
   try {
-    const response = await axios.get(`/xapp/ott/${token}`, req.xummAuthHeaders)
+    const response = await axios.get(`/xapp/ott/${token}/${process.env['XAPP_HASH']}`, req.xummAuthHeaders)
     const authToken = jwt.sign({
       ott: token,
       app: req.xummAuthHeaders.headers['X-API-Key']
@@ -227,3 +254,5 @@ app.listen(PORT, () => {
     }, {}))
   })
 })
+
+module.exports = app;
